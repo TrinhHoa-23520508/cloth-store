@@ -3,6 +3,8 @@ import { Product } from 'src/models/product.model';
 import { ResponseData } from 'src/global/globalClass';
 import { HttpStatus, HttpMessage } from 'src/global/globalEnum';
 import { ProductDTO } from 'src/dto/product.dto';
+import * as XLSX from 'xlsx';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class ProductService {
@@ -426,5 +428,28 @@ export class ProductService {
       throw new Error('Product not found');
     }
     return this.products.splice(index, 1)[0];
+  }
+  importProducts(productsDTO: ProductDTO[]): Product[] {
+    // Lấy ID lớn nhất hiện tại hoặc khởi tạo là 0
+    const currentMaxId =
+      this.products.length > 0
+        ? Math.max(...this.products.map((p) => p.id))
+        : 0;
+
+    // Tạo danh sách sản phẩm mới
+    const newProducts: Product[] = productsDTO.map((productDTO, index) => ({
+      id: currentMaxId + index + 1, // Tính ID dựa trên thứ tự
+      name: productDTO.name,
+      brand: productDTO.brand,
+      price: productDTO.price,
+      stock: productDTO.stock,
+      sold: productDTO.sold ?? 0,
+      description: productDTO.description,
+    }));
+
+    // Thêm sản phẩm mới vào danh sách hiện có
+    this.products.push(...newProducts);
+
+    return newProducts;
   }
 }
